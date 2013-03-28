@@ -25,7 +25,13 @@
 #include <stdlib.h>         // For exception class
 #include <stdio.h>         // For exception class
 #include <string.h>         // For exception class
-
+#include <sys/types.h>       // For data types
+#include <sys/socket.h>      // For socket(), connect(), send(), and recv()
+#include <netdb.h>           // For gethostbyname()
+#include <arpa/inet.h>       // For inet_addr()
+#include <unistd.h>          // For close()
+#include <pcap.h>          // For close()
+#include <netinet/in.h>      // For sockaddr_in
 using namespace std;
 
 
@@ -52,6 +58,7 @@ struct SoRData{
 	int packetID;
 	char sourceIP[15];
 	short sourcePort;
+	int pkt_len;
 	int contentID;
 	int sor_flg;
 	dMType type;
@@ -65,6 +72,7 @@ struct SoRSimHeader{
 	int packetID;
 	char sourceIP[15];
 	short sourcePort;
+	int pkt_len;
 	int contentID;
 	int sor_flg;
 	dMType type;

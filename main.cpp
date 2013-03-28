@@ -14,7 +14,7 @@
 #include <iostream>
 #include "PracticalSocket.h"      // For UDPSocket and SocketException
 #include <cstdlib>
-
+#include <pcap.h>
 using namespace std;
 
 string serv_address;
@@ -42,6 +42,7 @@ void pcap_callback(u_char *userdata, const struct pcap_pkthdr *h, const u_char *
 	data = (SoRData *)malloc(data_size);
 	memcpy(&(data->pcap_hdr), h, sizeof(struct pcap_pkthdr));
 	memcpy(data->pcap_pkt, p, h->caplen);
+	data->pkt_len = data_size;
 
 //	timestamp = packet_cnt->pcap_hdr.ts;
 	packet = (unsigned char *)malloc(data_size);
@@ -63,12 +64,21 @@ void pcap_callback(u_char *userdata, const struct pcap_pkthdr *h, const u_char *
 
   try {
     UDPSocket *sock = new UDPSocket(52001);
-	sock->getLocalAddress().copy(data->sourceIP,15);
+	memcpy(data->sourceIP,serv_address.c_str(),15);
 	cout << sock->getLocalAddress() << endl;
 	cout << sock->getLocalPort() << endl;
 	data->sourcePort = sock->getLocalPort();
 
 
+  sockaddr_in addr;
+    unsigned int addr_len = sizeof(addr);
+/*
+	cout << "getsocket: " << endl;
+	cout << getsockname(4, (sockaddr *) &addr, (socklen_t *) &addr_len) << endl;
+	cout << inet_ntoa(addr.sin_addr) << endl;
+	cout << getsockname(0, (sockaddr *) &addr, (socklen_t *) &addr_len) << endl;
+
+*/
 	cout << "src_ip sim: "<<  data->sourceIP << endl;
     // Send the string to the server
     sock->sendTo(data, data_size, serv_address, echoServPort);
