@@ -55,7 +55,7 @@ enum dMType
 * SoR data structure
 */
 struct SoRData{
-	int packetID;
+	int packet_id;
 	char sourceIP[15];
 	short sourcePort;
 	int pkt_len;
@@ -64,7 +64,7 @@ struct SoRData{
 	dMType type;
 	double packetGenTime;
 	struct pcap_pkthdr pcap_hdr;
-	u_char pcap_pkt[];
+	u_char pcap_pkt[1800];
 	///char msg[100];
 };
 

@@ -19,9 +19,9 @@ using namespace std;
 
 string serv_address;
 char* port_num;
+size_t cnt = 0;
 
-const int TRANSFERMAX = 1800;
-
+UDPSocket *sock = new UDPSocket(52000);
 
 /*
  * workhorse function, we will be modifying this function
@@ -35,67 +35,56 @@ void pcap_callback(u_char *userdata, const struct pcap_pkthdr *h, const u_char *
 	struct in_addr dst_ip;
 	struct timeval timestamp;
 
-
+	cnt++;
 	PacketCnt *pcnt;
-	SoRData *data;
-	int data_size = sizeof(SoRData) + h->caplen;
-	data = (SoRData *)malloc(data_size);
+	SoRData *data = new SoRData;
+	int data_size = sizeof(struct pcap_pkthdr) + h->caplen;
+	data->packet_id = cnt;
 	memcpy(&(data->pcap_hdr), h, sizeof(struct pcap_pkthdr));
 	memcpy(data->pcap_pkt, p, h->caplen);
 	data->pkt_len = data_size;
+	cout << "Packet ID: " << cnt << endl;
 
-//	timestamp = packet_cnt->pcap_hdr.ts;
-	packet = (unsigned char *)malloc(data_size);
-	memcpy(packet, data, data_size);
+	timestamp = data->pcap_hdr.ts;
+	packet = (unsigned char *)malloc(h->caplen);
+	memcpy(packet, data->pcap_pkt, h->caplen);
 
-	l3_header = packet + sizeof(SoRSimHeader) + sizeof(struct ether_header); //IP header
+	l3_header = packet  + sizeof(struct ether_header); //IP header
 	ip_header = (struct ip *)l3_header;
 	src_ip = ip_header->ip_src;
 	dst_ip = ip_header->ip_dst;
+	cout << "src_ip: " << inet_ntoa(src_ip) << endl;
+	cout << "dst_ip: " << inet_ntoa(dst_ip) << endl;
 
+//delete data;
 
 	cout << "caplen: " << data->pcap_hdr.caplen  << endl;
-	cout << "src_ip: " << inet_ntoa(src_ip)  << endl;
+//	cout << "src_ip: " << inet_ntoa(src_ip)  << endl;
 	cout << "content: "<<  data->pcap_pkt << endl;
 
-
+	//sleep(2);
   unsigned short echoServPort = Socket::resolveService(port_num, "udp");
 
 
   try {
-    UDPSocket *sock = new UDPSocket(52001);
-	memcpy(data->sourceIP,serv_address.c_str(),15);
-	cout << sock->getLocalAddress() << endl;
-	cout << sock->getLocalPort() << endl;
+	memcpy(data->sourceIP,"192.168.1.6",15);
 	data->sourcePort = sock->getLocalPort();
+	data->sor_flg = 0;
 
 
-  sockaddr_in addr;
+	  sockaddr_in addr;
     unsigned int addr_len = sizeof(addr);
-/*
-	cout << "getsocket: " << endl;
-	cout << getsockname(4, (sockaddr *) &addr, (socklen_t *) &addr_len) << endl;
-	cout << inet_ntoa(addr.sin_addr) << endl;
-	cout << getsockname(0, (sockaddr *) &addr, (socklen_t *) &addr_len) << endl;
 
-*/
 	cout << "src_ip sim: "<<  data->sourceIP << endl;
     // Send the string to the server
     sock->sendTo(data, data_size, serv_address, echoServPort);
-
+	cout << "Data have sent-------------------- " << endl;
     // Receive a response
-    char echoBuffer[TRANSFERMAX + 1];       // Buffer for echoed string + \0
     int respStringLen;                  // Length of received response
-    respStringLen = sock->recv(echoBuffer, TRANSFERMAX);
-	/*
-    if ((respStringLen = sock.recv(echoBuffer, TRANSFERMAX)) != echoStringLen) {
-      cerr << "Unable to receive" << endl;
-      exit(1);
-    }
-	*/
-
-    echoBuffer[respStringLen] = '\0';             // Terminate the string!
-    cout << "Received: " << echoBuffer << endl;   // Print the echoed arg
+    respStringLen = sock->recv(data, sizeof(SoRData));
+	cout << "Data have recieved-------------------- " << endl;
+	delete data;
+//	free(packet);
 
     // Destructor closes the socket
 
@@ -131,7 +120,6 @@ int main(int argc,char **argv)
 	char ebuf[PCAP_ERRBUF_SIZE];
 
 	pcap_t *pd = NULL;
-	cout << "goehogeh" << endl;
 	cout << argv[1] << endl;
 	pd = pcap_open_offline(argv[3], ebuf);
 
