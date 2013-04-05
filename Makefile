@@ -1,5 +1,5 @@
 TARGET = pcap
-SRCS = main.cpp PracticalSocket.cpp
+SRCS =$(shell ls *.cpp)
 OBJS = $(SRCS:.cpp=.o)
 CC = g++
 LIBS = -lpcap -ansi -pedantic
